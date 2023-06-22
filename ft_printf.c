@@ -3,174 +3,105 @@
 /*                                                        :::      ::::::::   */
 /*   ft_printf.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dkurcbar <dkurcbar@student.42barcel>       +#+  +:+       +#+        */
+/*   By: dkurcbar <dkurcbar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/15 13:41:31 by dkurcbar          #+#    #+#             */
-/*   Updated: 2023/06/15 17:09:16 by dkurcbar         ###   ########.fr       */
+/*   Updated: 2023/06/22 14:59:08 by dkurcbar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdarg.h>
-#include "libft.h"
-#include <unistd.h>
+#include "ft_printf.h"
 
-int ft_abs(int i)
+static void	make_c(char *pc, char c)
 {
-	if (i < 0)
-		return (-i);
-	else 
-		return (i);
+	pc[0] = c;
+	pc[1] = '1';
 }
 
-int ft_putchar(char c)
+static char	*iss(char *print_str, va_list ap)
 {
-	write (1,&c, 1);
-	return (1);
-}
-
-int	ft_putstr(char *str)
-{
-	int rtn;
-
-	if (ft_strlen(str) == 0)
-	{
-		write (1, "NULL", 4);
-		return (4);
-	} 
-	else 
-	{
-		rtn = 0;
-		while (str[rtn])
-			write(1, &str[rtn++], 1);
-	}
-	return (rtn);
-}
-
-
-char	*exceptions(int n)
-{
-	char	*rtn;
-	
-	if (n == 0)
-		rtn = ft_strdup("0");
+	print_str = va_arg(ap, char *);
+	if (!print_str)
+		print_str = ft_strdup ("(null)");
 	else
-		rtn = ft_strdup("-80000000");
-	return (rtn);
+		print_str = ft_strdup(print_str);
+	return (print_str);
 }
 
-char	*mall_str(int n, int *num_d )
+char	*make_str(const char **str, char *print_str, va_list ap, char *c)
 {
-	int 	i;
-	char	*rtn;
-
-	 i = 0;
-	 if (n < 0)
-	 {
-		 *num_d = 1;
-		 n = -n;
-	 }
-	 while (n > 0)
-	 {
-		 n = n / 16;
-		 (*num_d)++;
-	 }
-	 rtn = (char *) ft_calloc(*num_d + 1, sizeof(char));
-	 return (rtn);
-}
-
-char	*detohex(char *rtn, int n, int num_d, int upper)
-{
-	char a;
-
-	a = 'a';
-	if (upper)
-		a = 'A';
-	num_d--;
-	if (n < 0)
+	c[1] = '0';
+	if (*str[0] != '%')
+		make_c(c,*str[0]);
+	else
 	{
-		rtn[0] = '-';
-		n = -n;
+		(*str)++;
+		if (*str[0] == 's')
+			print_str = iss(print_str, ap);
+		else if (*str[0] == '%')
+			print_str = ft_strdup("%");
+		else if (*str[0] == 'd' || *str[0] == 'i')
+			print_str = ft_itoa(va_arg(ap, int));
+		else if (*str[0] == 'u')
+			print_str = ft_itoa_u(va_arg(ap, unsigned int));
+		else if (*str[0] == 'x')
+			print_str = ft_itoa_hex((unsigned long)va_arg(ap, int), 0);
+		else if (*str[0] == 'X')
+			print_str = ft_itoa_hex((unsigned long)va_arg(ap, int), 1);
+		else if (*str[0] == 'p')
+			print_str = ft_itoa_hex(va_arg(ap, unsigned long), 2);
+		else if (*str[0] == 'c')
+			make_c (c, (char) va_arg(ap, int));
 	}
-	while(n > 0)
+	return (print_str);
+}
+
+int	pr_print(char *print_str, char *c, va_list ap)
+{
+	int	i;
+
+	if (c[1] != '0')
+	{	
+		i = ft_putchar(c[0]);
+		if (i == -1)
+		{
+			va_end(ap);
+			return (-1);
+		}
+	}
+	else
 	{
-		if ((n % 16) < 10) 
-			rtn[num_d] = n % 16 + '0';
-		else
-			rtn[num_d] = n % 16 - 10 + a;
-		n = n / 16;
-		num_d--;
+		i = ft_putstr(print_str);
+		if (i == -1 || !print_str)
+		{
+			free(print_str);
+			va_end(ap);
+			return (-1);
+		}
+		free (print_str);
 	}
-	return (rtn);
+	return (i);
 }
 
-
-char	*ft_itoa_hex(int num, int upper)
+int	ft_printf(const char *str, ...)
 {
-	char	*rtn;
-	int		num_d;
-
-	num_d = 0;
-	if ((num == 0) || (num <=-2147483648))
-		return (exceptions(num));
-	rtn = mall_str(num, &num_d);
-	if (rtn)
-		rtn = detohex(rtn, num, num_d, upper);
-	return (rtn);
-}
-	
-
-
-
-
-
-int ft_printf(const char *str, ...)
-{
-	va_list ap;
-	int rtn;
+	va_list	ap;
+	int		rtn;
+	char	*print_str;
+	int		i;
+	char	c[2];
 
 	va_start(ap, str);
 	rtn = 0;
 	while (*str)
 	{
-		if (str[0] != '%')
-			rtn += ft_putchar(str[0]);
-		else 
-		{
-			str++;
-			if(str[0] == '%')
-				rtn += ft_putchar('%');
-			else if(str[0] == 'c')
-				rtn += ft_putchar((char) va_arg(ap, char));
-			else if(str[0] == 's')
-				rtn += ft_putstr(va_arg(ap, char *));
-			else if(str[0] == 'd' || str[0] == 'i')
-				rtn += ft_putstr(ft_itoa(va_arg(ap, int)));
-			else if(str[0] == 'u')
-				rtn += ft_putstr(ft_itoa(ft_abs(va_arg(ap, int))));
-			else if(str[0] == 'x')
-				rtn += ft_putstr(ft_itoa_hex(va_arg(ap, int), 0));
-			else if(str[0] == 'X')
-				rtn += ft_putstr(ft_itoa_hex(va_arg(ap, int), 1));
-		}
+		print_str = make_str(&str, print_str, ap, c);
+		i = pr_print(print_str, c, ap);
+		if (i == -1)
+			return (-1);
+		rtn += i;
 		str++;
 	}
 	va_end(ap);
 	return (rtn);
 }
-
-int main(int args, char	**argv)
-{
-	char *str = "que tal";
-	int rtn = 0;
-	int rtn2 = 0;
-	int i = 12131415;
-	ft_printf("mi funcion\n");
-	rtn = ft_printf("x= %x X = %X %% \n",i,i);
-	printf("devuelve %d\n", rtn);
-	printf("print f\n");
-	rtn2 = printf("x= %x X = %X %% \n",i,i);
-	printf("devuelve %d\n", rtn2);
-
-}
-	
-	
