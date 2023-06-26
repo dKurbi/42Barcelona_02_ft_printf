@@ -6,7 +6,7 @@
 /*   By: dkurcbar <dkurcbar@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/15 13:41:31 by dkurcbar          #+#    #+#             */
-/*   Updated: 2023/06/22 14:59:08 by dkurcbar         ###   ########.fr       */
+/*   Updated: 2023/06/26 14:52:45 by dkurcbar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ static char	*iss(char *print_str, va_list ap)
 	return (print_str);
 }
 
-char	*make_str(const char **str, char *print_str, va_list ap, char *c)
+static char	*make_str(const char **str, char *print_str, va_list ap, char *c)
 {
 	c[1] = '0';
 	if (*str[0] != '%')
@@ -56,7 +56,7 @@ char	*make_str(const char **str, char *print_str, va_list ap, char *c)
 	return (print_str);
 }
 
-int	pr_print(char *print_str, char *c, va_list ap)
+static int	pr_print(char *print_str, char *c, va_list ap)
 {
 	int	i;
 
